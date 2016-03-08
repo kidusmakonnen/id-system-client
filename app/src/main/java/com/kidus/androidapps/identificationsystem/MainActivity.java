@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
@@ -33,7 +34,8 @@ public class MainActivity extends AppCompatActivity {
 
 
     Button mScanButton;
-    TextView mResultTextView, mAccessTextView;
+    TextView mResultTextView;
+    ImageView mAccessImageView;
     WebView mWebView;
     String responseJSON;
     String photo_location = "http://10.0.0.4/ID_SYSTEM/employee_photos/";
@@ -150,13 +152,12 @@ public class MainActivity extends AppCompatActivity {
                 txt += "<br />Gender<br /><b>" + gender + "</b>";
                 mResultTextView.setText(Html.fromHtml(txt));
 
-                mAccessTextView = (TextView) findViewById(R.id.access_information_text_view);
+                mAccessImageView = (ImageView) findViewById(R.id.access_image_view);
+
                 if (allowed) {
-                    mAccessTextView.setText("Access Granted!");
-                    mAccessTextView.setTextColor(Color.argb(1,0,1,0));
+                    mAccessImageView.setImageDrawable(getResources().getDrawable(R.drawable.granted));
                 } else {
-                    mAccessTextView.setText("Access Denied!");
-                    mAccessTextView.setTextColor(Color.argb(1,1,0,0));
+                    mAccessImageView.setImageDrawable(getResources().getDrawable(R.drawable.denied));
                 }
 
 
