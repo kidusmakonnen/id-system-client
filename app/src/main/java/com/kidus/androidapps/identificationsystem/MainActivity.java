@@ -2,40 +2,41 @@ package com.kidus.androidapps.identificationsystem;
 
 import android.app.ProgressDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.Html;
+import android.util.Log;
 import android.view.View;
 import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
-import com.kidus.androidapps.identificationsystem.R;
 
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 
 public class MainActivity extends AppCompatActivity {
 
 
     Button mScanButton;
-    TextView mResultTextView;
+    TextView mResultTextView, mAccessTextView;
     WebView mWebView;
     String responseJSON;
+    String photo_location = "http://10.0.0.4/ID_SYSTEM/employee_photos/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,7 +75,7 @@ public class MainActivity extends AppCompatActivity {
         IntentResult scanningResult = IntentIntegrator.parseActivityResult(requestCode,
                 resultCode, intent);
         String qrData = scanningResult.getContents();
-        String request = "http://192.168.183.1/ID_SYSTEM/getemployee.php?data=" + qrData +
+        String request = "http://10.0.0.4/ID_SYSTEM/getemployee.php?data=" + qrData +
                 "&premisesId=1";
         getJSON(request);
 
@@ -129,22 +130,73 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 boolean allowed=false;
-                String full_name="";
+                String full_name = "";
+                String department = "";
+                String gender = "";
+                String photo_filename="";
                 try {
                     allowed = jsonObject.getBoolean("allowed");
                     full_name = jsonObject.getString("full_name");
+                    department = jsonObject.getString("department");
+                    gender = jsonObject.getString("gender");
+                    photo_filename = jsonObject.getString("photo");
+
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
 
-                mResultTextView = (TextView) findViewById(R.id.textView2);
-                if (allowed)
-                mResultTextView.setText(full_name + " is allowed:D");
-                else
-                    mResultTextView.setText(full_name + "is not allowed :(");
+                mResultTextView = (TextView) findViewById(R.id.employee_information_text_view);
+                String txt = "Name<br /><b>" + full_name + "</b><br />Department<br /><b>" + department + "</b>";
+                txt += "<br />Gender<br /><b>" + gender + "</b>";
+                mResultTextView.setText(Html.fromHtml(txt));
+
+                mAccessTextView = (TextView) findViewById(R.id.access_information_text_view);
+                if (allowed) {
+                    mAccessTextView.setText("Access Granted!");
+                    mAccessTextView.setTextColor(Color.argb(1,0,1,0));
+                } else {
+                    mAccessTextView.setText("Access Denied!");
+                    mAccessTextView.setTextColor(Color.argb(1,1,0,0));
+                }
+
+
+
+                new DownloadImageTask((ImageView) findViewById(R.id.employee_photo_image_view))
+                        .execute(photo_location + photo_filename);
             }
         }
         GetJSON gj = new GetJSON();
         gj.execute(url);
+    }
+
+    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+        ImageView bmImage;
+
+        public DownloadImageTask(ImageView bmImage) {
+            this.bmImage = bmImage;
+        }
+
+        protected Bitmap doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
+            try {
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return mIcon11;
+        }
+
+        protected void onPostExecute(Bitmap result) {
+            bmImage.setImageBitmap(result);
+        }
+    }
+
+    public String prepareEmployeeInfo(String full_name, String gender, String department) {
+        String txt = "Name<br /><b>" + full_name + "</b><br />Department<br /><b>" + department + "</b>";
+        txt += "<br />Gender<br /><b>" + gender + "</b>";
+        return txt;
     }
 }
