@@ -43,15 +43,26 @@ public class MainActivity extends AppCompatActivity {
 
     Button mScanButton;
     TextView mResultTextView;
-    ImageView mAccessImageView;
+    ImageView mAccessImageView, mLogoImageView;
     WebView mWebView;
     String responseJSON;
     String photo_location = "http://" + ConnectionInformation.remoteIp + "/ID_SYSTEM/employee_photos/";
+    boolean logoVisible = true;
+    String employeeDetails = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if (savedInstanceState != null) {
+            logoVisible = savedInstanceState.getBoolean("LOGO_SHOWN");
+        }
+
+        if (!logoVisible) {
+            mLogoImageView = (ImageView) findViewById(R.id.logo);
+            mLogoImageView.setVisibility(View.INVISIBLE);
+        }
 
         ConnectionInformation.loadSettings(this);
 
@@ -61,8 +72,14 @@ public class MainActivity extends AppCompatActivity {
         mScanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (logoVisible) {
+                    mLogoImageView = (ImageView) findViewById(R.id.logo);
+                    mLogoImageView.setVisibility(View.INVISIBLE);
+                    logoVisible = false;
+                }
                 IntentIntegrator scanIntegrator = new IntentIntegrator(MainActivity.this);
                 scanIntegrator.initiateScan();
+
                 //identify3("7_fdaed99748112760c3185d12e35c8127", 3);
                 //getJSON("http://192.168.183.1/ID_SYSTEM/getemployee.php?data=7_fdaed99748112760c3185d12e35c8127&premisesId=1");
 
@@ -79,6 +96,12 @@ public class MainActivity extends AppCompatActivity {
 //        String x = mWebView.toString();
 //        String y = x;
 
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("LOGO_SHOWN", logoVisible);
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
@@ -159,9 +182,9 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     mResultTextView = (TextView) findViewById(R.id.employee_information_text_view);
-                    String txt = "Name<br /><b>" + full_name + "</b><br />Department<br /><b>" + department + "</b>";
-                    txt += "<br />Gender<br /><b>" + gender + "</b>";
-                    mResultTextView.setText(Html.fromHtml(txt));
+                    employeeDetails = "Name<br /><b>" + full_name + "</b><br />Department<br /><b>" + department + "</b>";
+                    employeeDetails += "<br />Gender<br /><b>" + gender + "</b>";
+                    mResultTextView.setText(Html.fromHtml(employeeDetails));
 
                     mAccessImageView = (ImageView) findViewById(R.id.access_image_view);
 
