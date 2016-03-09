@@ -15,9 +15,11 @@ import android.os.Bundle;
 import android.text.Html;
 import android.text.InputType;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.webkit.URLUtil;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -111,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
         if (qrData != null) {
             String request = "http://" + ConnectionInformation.remoteIp + "/ID_SYSTEM/getemployee.php?data=" + qrData +
                     "&premisesId=" + ConnectionInformation.currentPremises;
-            getJSON(request);
+                getJSON(request);
         }
 
     }
@@ -156,7 +158,7 @@ public class MainActivity extends AppCompatActivity {
             protected void onPostExecute(String s) {
                 super.onPostExecute(s);
                 loading.dismiss();
-                if (s.charAt(0) == '{') {
+                if (s != null && s.charAt(0) == '{') {
                     responseJSON = s;
                     JSONObject jsonObject = null;
                     try {
@@ -198,9 +200,15 @@ public class MainActivity extends AppCompatActivity {
                     new DownloadImageTask((ImageView) findViewById(R.id.employee_photo_image_view))
                             .execute(photo_location + photo_filename);
                 } else {
+                    String errorMessage = "";
+                    if (s != null) {
+                        errorMessage = s;
+                    } else {
+                        errorMessage = "Cannot connect to ID System server. Please check your settings.";
+                    }
                     new AlertDialog.Builder(MainActivity.this)
                             .setTitle("Error")
-                            .setMessage(s)
+                            .setMessage(errorMessage)
                             .setPositiveButton("OK", new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface dialog, int which) {
