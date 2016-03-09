@@ -6,20 +6,15 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.graphics.drawable.Drawable;
-import android.net.Uri;
 import android.os.AsyncTask;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.text.Html;
 import android.text.InputType;
 import android.util.Log;
-import android.util.Patterns;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.webkit.URLUtil;
 import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -32,7 +27,6 @@ import com.google.zxing.integration.android.IntentResult;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -46,7 +40,6 @@ public class MainActivity extends AppCompatActivity {
     Button mScanButton;
     TextView mResultTextView;
     ImageView mAccessImageView, mLogoImageView;
-    WebView mWebView;
     String responseJSON;
     String photo_location = "http://" + ConnectionInformation.remoteIp + "/ID_SYSTEM/employee_photos/";
     boolean logoVisible = true;
@@ -67,8 +60,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         ConnectionInformation.loadSettings(this);
-
-        //mWebView = (WebView) findViewById(R.id.webView);
         mScanButton = (Button) findViewById(R.id.scan_button);
 
         mScanButton.setOnClickListener(new View.OnClickListener() {
@@ -81,23 +72,8 @@ public class MainActivity extends AppCompatActivity {
                     mLogoImageView.setVisibility(View.INVISIBLE);
                     logoVisible = false;
                 }
-
-                //identify3("7_fdaed99748112760c3185d12e35c8127", 3);
-                //getJSON("http://192.168.183.1/ID_SYSTEM/getemployee.php?data=7_fdaed99748112760c3185d12e35c8127&premisesId=1");
-
-
-
-                // mResultTextView = (TextView) findViewById(R.id.textView2);
-                //mResultTextView.setText(responseJSON);
-
-
-
             }
         });
-//        mWebView.loadUrl("http://192.168.56.1/id_system/getEmployee.php?data=7_fdaed99748112760c3185d12e35c8127&premisesId=3");
-//        String x = mWebView.toString();
-//        String y = x;
-
     }
 
     @Override
