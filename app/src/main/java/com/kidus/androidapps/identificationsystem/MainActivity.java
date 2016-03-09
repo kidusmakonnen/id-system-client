@@ -1,6 +1,8 @@
 package com.kidus.androidapps.identificationsystem;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,11 +13,16 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Html;
+import android.text.InputType;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.webkit.WebView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.zxing.integration.android.IntentIntegrator;
@@ -23,6 +30,7 @@ import com.google.zxing.integration.android.IntentResult;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -38,14 +46,14 @@ public class MainActivity extends AppCompatActivity {
     ImageView mAccessImageView;
     WebView mWebView;
     String responseJSON;
-    String photo_location = "http://10.0.0.4/ID_SYSTEM/employee_photos/";
+    String photo_location = "http://" + ConnectionInformation.remoteIp + "/ID_SYSTEM/employee_photos/";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
+        ConnectionInformation.loadSettings(this);
 
         //mWebView = (WebView) findViewById(R.id.webView);
         mScanButton = (Button) findViewById(R.id.scan_button);
@@ -77,9 +85,11 @@ public class MainActivity extends AppCompatActivity {
         IntentResult scanningResult = IntentIntegrator.parseActivityResult(requestCode,
                 resultCode, intent);
         String qrData = scanningResult.getContents();
-        String request = "http://10.0.0.4/ID_SYSTEM/getemployee.php?data=" + qrData +
-                "&premisesId=1";
-        getJSON(request);
+        if (qrData != null) {
+            String request = "http://" + ConnectionInformation.remoteIp + "/ID_SYSTEM/getemployee.php?data=" + qrData +
+                    "&premisesId=" + ConnectionInformation.currentPremises;
+            getJSON(request);
+        }
 
     }
 
@@ -123,47 +133,58 @@ public class MainActivity extends AppCompatActivity {
             protected void onPostExecute(String s) {
                 super.onPostExecute(s);
                 loading.dismiss();
-                responseJSON = s;
-                JSONObject jsonObject = null;
-                try {
-                    jsonObject = new JSONObject(s);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                if (s.charAt(0) == '{') {
+                    responseJSON = s;
+                    JSONObject jsonObject = null;
+                    try {
+                        jsonObject = new JSONObject(s);
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
 
-                boolean allowed=false;
-                String full_name = "";
-                String department = "";
-                String gender = "";
-                String photo_filename="";
-                try {
-                    allowed = jsonObject.getBoolean("allowed");
-                    full_name = jsonObject.getString("full_name");
-                    department = jsonObject.getString("department");
-                    gender = jsonObject.getString("gender");
-                    photo_filename = jsonObject.getString("photo");
+                    boolean allowed = false;
+                    String full_name = "";
+                    String department = "";
+                    String gender = "";
+                    String photo_filename = "";
+                    try {
+                        allowed = jsonObject.getBoolean("allowed");
+                        full_name = jsonObject.getString("full_name");
+                        department = jsonObject.getString("department");
+                        gender = jsonObject.getString("gender");
+                        photo_filename = jsonObject.getString("photo");
 
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
 
-                mResultTextView = (TextView) findViewById(R.id.employee_information_text_view);
-                String txt = "Name<br /><b>" + full_name + "</b><br />Department<br /><b>" + department + "</b>";
-                txt += "<br />Gender<br /><b>" + gender + "</b>";
-                mResultTextView.setText(Html.fromHtml(txt));
+                    mResultTextView = (TextView) findViewById(R.id.employee_information_text_view);
+                    String txt = "Name<br /><b>" + full_name + "</b><br />Department<br /><b>" + department + "</b>";
+                    txt += "<br />Gender<br /><b>" + gender + "</b>";
+                    mResultTextView.setText(Html.fromHtml(txt));
 
-                mAccessImageView = (ImageView) findViewById(R.id.access_image_view);
+                    mAccessImageView = (ImageView) findViewById(R.id.access_image_view);
 
-                if (allowed) {
-                    mAccessImageView.setImageDrawable(getResources().getDrawable(R.drawable.granted));
+                    if (allowed) {
+                        mAccessImageView.setImageDrawable(getResources().getDrawable(R.drawable.granted));
+                    } else {
+                        mAccessImageView.setImageDrawable(getResources().getDrawable(R.drawable.denied));
+                    }
+
+
+                    new DownloadImageTask((ImageView) findViewById(R.id.employee_photo_image_view))
+                            .execute(photo_location + photo_filename);
                 } else {
-                    mAccessImageView.setImageDrawable(getResources().getDrawable(R.drawable.denied));
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("Error")
+                            .setMessage(s)
+                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                }
+                            }).show();
                 }
-
-
-
-                new DownloadImageTask((ImageView) findViewById(R.id.employee_photo_image_view))
-                        .execute(photo_location + photo_filename);
             }
         }
         GetJSON gj = new GetJSON();
@@ -177,6 +198,7 @@ public class MainActivity extends AppCompatActivity {
             this.bmImage = bmImage;
         }
 
+        @Override
         protected Bitmap doInBackground(String... urls) {
             String urldisplay = urls[0];
             Bitmap mIcon11 = null;
@@ -190,6 +212,7 @@ public class MainActivity extends AppCompatActivity {
             return mIcon11;
         }
 
+        @Override
         protected void onPostExecute(Bitmap result) {
             bmImage.setImageBitmap(result);
         }
@@ -199,5 +222,57 @@ public class MainActivity extends AppCompatActivity {
         String txt = "Name<br /><b>" + full_name + "</b><br />Department<br /><b>" + department + "</b>";
         txt += "<br />Gender<br /><b>" + gender + "</b>";
         return txt;
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        getMenuInflater().inflate(R.menu.setting, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        LinearLayout linearLayout = new LinearLayout(this);
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
+        final TextView ipPrompt = new TextView(this);
+        ipPrompt.setText("Enter Server IP Address:");
+        final TextView premisesIdPrompt = new TextView(this);
+        premisesIdPrompt.setText("Enter Premises ID:");
+        final EditText remoteIp = new EditText(this);
+        final EditText premisesId = new EditText(this);
+        premisesId.setInputType(InputType.TYPE_CLASS_NUMBER);
+
+        if (ConnectionInformation.remoteIp != null) {
+            remoteIp.setText(ConnectionInformation.remoteIp);
+        }
+
+        if (ConnectionInformation.currentPremises != null) {
+            premisesId.setText(ConnectionInformation.currentPremises);
+        }
+
+        linearLayout.addView(ipPrompt);
+        linearLayout.addView(remoteIp);
+        linearLayout.addView(premisesIdPrompt);
+        linearLayout.addView(premisesId);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Settings")
+                .setView(linearLayout)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        ConnectionInformation.changeSettings(MainActivity.this,
+                                remoteIp.getText().toString(),
+                                premisesId.getText().toString());
+                    }
+                })
+                .setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+                }).show();
+        return super.onOptionsItemSelected(item);
     }
 }
