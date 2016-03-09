@@ -74,13 +74,13 @@ public class MainActivity extends AppCompatActivity {
         mScanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                IntentIntegrator scanIntegrator = new IntentIntegrator(MainActivity.this);
+                scanIntegrator.initiateScan();
                 if (logoVisible) {
                     mLogoImageView = (ImageView) findViewById(R.id.logo);
                     mLogoImageView.setVisibility(View.INVISIBLE);
                     logoVisible = false;
                 }
-                IntentIntegrator scanIntegrator = new IntentIntegrator(MainActivity.this);
-                scanIntegrator.initiateScan();
 
                 //identify3("7_fdaed99748112760c3185d12e35c8127", 3);
                 //getJSON("http://192.168.183.1/ID_SYSTEM/getemployee.php?data=7_fdaed99748112760c3185d12e35c8127&premisesId=1");
